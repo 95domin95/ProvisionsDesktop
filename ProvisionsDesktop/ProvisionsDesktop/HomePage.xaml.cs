@@ -51,7 +51,9 @@ namespace ProvisionsDesktop
             }
         }
 
-        public ObservableCollection<Provision> Provisions;
+        public ObservableCollection<Provision> Provisions { get; set; }
+
+        public List<string> Statuses { get; set; }
 
         public HomePage(User user)
         {
@@ -108,6 +110,8 @@ namespace ProvisionsDesktop
                                 {
                                     day.Id = dataReader.GetGuid(idx_Id);
                                 }
+                                Day.Statuses = Statuses;
+                                Day.Provisions = Provisions.Select(p => p.Name).ToList();
                                 Days.Add(day);
                             }
 
@@ -120,6 +124,7 @@ namespace ProvisionsDesktop
 
         private void BtnRefreshClick(object sender, RoutedEventArgs e)
         {
+            GetStatuses();
             GetProvisions();
             GetDays();
         }
@@ -189,7 +194,7 @@ namespace ProvisionsDesktop
             Provisions = new ObservableCollection<Provision>();
 
             using (SqlConnection connection = new SqlConnection(
-    Properties.Settings.Default.connectionString))
+                Properties.Settings.Default.connectionString))
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
@@ -233,6 +238,39 @@ namespace ProvisionsDesktop
                             }
 
                             provisionsList.ItemsSource = Provisions;
+                        }
+                    }
+                }
+            }
+        }
+
+        public void GetStatuses()
+        {
+            Statuses = new List<string>();
+
+            using (SqlConnection connection = new SqlConnection(
+                Properties.Settings.Default.connectionString))
+            {
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandText = "p_get_statuses";
+
+                    connection.Open();
+
+                    using (SqlDataReader dataReader = command.ExecuteReader())
+                    {
+                        if (dataReader.HasRows)
+                        {
+                            int idx_Name = dataReader.GetOrdinal("Name");
+
+                            while (dataReader.Read())
+                            {
+                                if (!dataReader.IsDBNull(idx_Name))
+                                {
+                                    Statuses.Add(dataReader.GetString(idx_Name));
+                                }
+                            }
                         }
                     }
                 }

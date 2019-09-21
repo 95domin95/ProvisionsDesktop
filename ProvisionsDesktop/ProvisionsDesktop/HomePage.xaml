@@ -6,6 +6,25 @@
         xmlns:local="clr-namespace:ProvisionsDesktop"
         mc:Ignorable="d"
         Title="HomePage" Height="450" Width="800">
+
+    <Window.Resources>
+        <Style x:Key="statusTbxStyle" TargetType="TextBlock">
+            <Style.Triggers>
+                <Trigger Property="Text" Value="Wykonano">
+                    <Setter Property="Foreground" Value="Green"/>
+                </Trigger>
+                <Trigger Property="Text" Value="Nie wykonano">
+                    <Setter Property="Foreground" Value="Red"/>
+                </Trigger>
+                <Trigger Property="Text" Value="Wykonano warunkowo">
+                    <Setter Property="Foreground" Value="Orange"/>
+                </Trigger>
+                <Trigger Property="Text" Value="Nie obowiązuje">
+                    <Setter Property="Foreground" Value="DarkGray"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"></ColumnDefinition>
@@ -25,9 +44,50 @@
             x:Name="DaysGrid"
             Grid.Row="1"
             Margin="10,0"
-            AutoGenerateColumns="true"
+            AutoGenerateColumns="false"
             RowEditEnding="DaysGrid_RowEditEnding"
+            AlternatingRowBackground="LightGray"
             ItemsSource="{Binding UpdateSourceTrigger=PropertyChanged}">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Nazwa postanowienia">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Path=ProvisionName}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding Path=Provisions}" SelectedItem="{Binding Path=ProvisionName}">
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Data rozpoczecia" SortDirection="Descending">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate x:Name="currentStatusTbx">
+                            <TextBlock Text="{Binding Path=Date, StringFormat=d}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding Path=Date}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Status wykonania">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Style="{DynamicResource statusTbxStyle}" Text="{Binding Path=Status}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox ItemsSource="{Binding Path=Statuses}" SelectedItem="{Binding Path=Status}">
+                            </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
         </DataGrid>
         <StackPanel
             Grid.Row="2"

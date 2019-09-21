@@ -68,6 +68,10 @@ namespace ProvisionsDesktop.Models
             }
         }
 
+        public static List<string> Statuses { get; set; }
+
+        public static List<string> Provisions { get; set; }
+
         public event PropertyChangedEventHandler PropertyChanged;
     }
 }
