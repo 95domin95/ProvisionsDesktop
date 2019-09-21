@@ -25,7 +25,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock
-            Text="Provisons"
+            Text="Postanowienia"
             FontSize="36"
             Grid.Column="1"
             Grid.Row="0"
@@ -34,7 +34,7 @@
             HorizontalAlignment="Center"/>
 
         <TextBlock
-            Text="Login"
+            Text="Nazwa użytkownika"
             FontSize="16"
             Grid.Column="1"
             Grid.Row="1"
@@ -53,7 +53,7 @@
             />
 
         <TextBlock
-            Text="Password"
+            Text="Hasło"
             FontSize="16"
             Grid.Column="1"
             Grid.Row="3"
@@ -73,7 +73,7 @@
         <Button
             Width="100"
             Height="25"
-            Content="Login"
+            Content="Zaloguj się"
             FontSize="16"
             Grid.Column="1"
             Grid.Row="5"
