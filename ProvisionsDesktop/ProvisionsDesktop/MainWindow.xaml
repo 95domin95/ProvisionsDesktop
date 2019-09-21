@@ -5,8 +5,76 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:ProvisionsDesktop"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Provisions" Height="450" Width="800">
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock
+            Text="Provisons"
+            FontSize="36"
+            Grid.Column="1"
+            Grid.Row="0"
+            Margin="0,10,0,30"
+            VerticalAlignment="Center"
+            HorizontalAlignment="Center"/>
+
+        <TextBlock
+            Text="Login"
+            FontSize="16"
+            Grid.Column="1"
+            Grid.Row="1"
+            HorizontalAlignment="Center"
+            />
         
+        <TextBox
+            x:Name="loginTextBox"
+            Text=""
+            FontSize="16"
+            Grid.Column="1"
+            Grid.Row="2"
+            HorizontalAlignment="Center"
+            Width="220"
+            Margin="0,0,0,20"
+            />
+
+        <TextBlock
+            Text="Password"
+            FontSize="16"
+            Grid.Column="1"
+            Grid.Row="3"
+            HorizontalAlignment="Center"
+            />
+
+        <PasswordBox
+            x:Name="loginPasswordBox"
+            FontSize="16"
+            Grid.Column="1"
+            Grid.Row="4"
+            HorizontalAlignment="Center"
+            Width="220"
+            Margin="0,0,0,20"
+            />
+
+        <Button
+            Width="100"
+            Height="25"
+            Content="Login"
+            FontSize="16"
+            Grid.Column="1"
+            Grid.Row="5"
+            Click="LoginClick"
+            />
     </Grid>
 </Window>
