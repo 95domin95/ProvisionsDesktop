@@ -29,12 +29,31 @@
             RowEditEnding="DaysGrid_RowEditEnding"
             ItemsSource="{Binding UpdateSourceTrigger=PropertyChanged}">
         </DataGrid>
-        <Button
+        <StackPanel
             Grid.Row="2"
-            FontSize="18"
-            HorizontalAlignment="Center"
-            x:Name="Refresh"
-            Margin="0,10"
-            Content="Odśwież" Click="BtnRefreshClick"></Button>
+            Margin="0,10,0,10"
+            HorizontalAlignment="Left"
+            Orientation="Horizontal">
+            <Button
+                Grid.Row="2"
+                FontSize="18"
+                HorizontalAlignment="Center"
+                x:Name="Refresh"
+                Content="Odśwież"
+                Click="BtnRefreshClick"
+                Margin="10, 0"/>
+            <TextBlock
+                Text="Postanowienie: "
+                FontSize="18"
+                Margin="10, 0"/>
+            <ComboBox
+                  x:Name="provisionsList"
+                  ItemsSource="{Binding Path=Provisions}"
+                  DisplayMemberPath="Name"
+                  SelectedValuePath="Name"
+                  SelectedValue="{Binding Path=SelectedProvision}" 
+                  MinWidth="120"
+                  SelectionChanged="ProvisionsList_SelectionChanged"/>
+        </StackPanel>
     </Grid>
 </Window>

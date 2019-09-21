@@ -29,6 +29,8 @@ namespace ProvisionsDesktop
 
         private readonly User _user;
 
+        public Provision SelectedProvision { get; set; }
+
         public void NotifyPropertyChanged([CallerMemberName]string propName = "")
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
@@ -49,6 +51,8 @@ namespace ProvisionsDesktop
             }
         }
 
+        public ObservableCollection<Provision> Provisions;
+
         public HomePage(User user)
         {
             InitializeComponent();
@@ -56,7 +60,7 @@ namespace ProvisionsDesktop
             BtnRefreshClick(new object(), new RoutedEventArgs());
         }
 
-        private void BtnRefreshClick(object sender, RoutedEventArgs e)
+        private void GetDays()
         {
             using (SqlConnection connection = new SqlConnection(
                 Properties.Settings.Default.connectionString))
@@ -68,6 +72,9 @@ namespace ProvisionsDesktop
 
                     SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
                     dp.Value = _user.Id;
+
+                    dp = command.Parameters.Add("@ProvisionId", SqlDbType.VarChar);
+                    dp.Value = SelectedProvision is null ? null : SelectedProvision.Id.ToString();
 
                     connection.Open();
 
@@ -97,7 +104,7 @@ namespace ProvisionsDesktop
                                 {
                                     day.Status = dataReader.GetString(idx_Status);
                                 }
-                                if(!dataReader.IsDBNull(idx_Id))
+                                if (!dataReader.IsDBNull(idx_Id))
                                 {
                                     day.Id = dataReader.GetGuid(idx_Id);
                                 }
@@ -109,6 +116,12 @@ namespace ProvisionsDesktop
                     }
                 }
             }
+        }
+
+        private void BtnRefreshClick(object sender, RoutedEventArgs e)
+        {
+            GetProvisions();
+            GetDays();
         }
 
         private async Task UpdateSelectedDay(Day day)
@@ -168,6 +181,73 @@ namespace ProvisionsDesktop
         {
             var day = e.Row.Item as Day;
             UpdateSelectedDay(day);
+        }
+
+
+        public void GetProvisions()
+        {
+            Provisions = new ObservableCollection<Provision>();
+
+            using (SqlConnection connection = new SqlConnection(
+    Properties.Settings.Default.connectionString))
+            {
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandText = "p_provisions_list";
+
+                    SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
+                    dp.Value = _user.Id;
+
+                    connection.Open();
+
+                    using (SqlDataReader dataReader = command.ExecuteReader())
+                    {
+                        if (dataReader.HasRows)
+                        {
+                            int idx_StartDate = dataReader.GetOrdinal("StartDate");
+                            int idx_Name = dataReader.GetOrdinal("Name");
+                            int idx_Description = dataReader.GetOrdinal("Description");
+                            int idx_Id = dataReader.GetOrdinal("Id");
+
+                            while (dataReader.Read())
+                            {
+                                var provision = new Provision();
+                                if (!dataReader.IsDBNull(idx_StartDate))
+                                {
+                                    provision.StartDate = dataReader.GetDateTime(idx_StartDate);
+                                }
+                                if (!dataReader.IsDBNull(idx_Name))
+                                {
+                                    provision.Name = dataReader.GetString(idx_Name);
+                                }
+                                if (!dataReader.IsDBNull(idx_Description))
+                                {
+                                    provision.Description = dataReader.GetString(idx_Description);
+                                }
+                                if (!dataReader.IsDBNull(idx_Id))
+                                {
+                                    provision.Id = dataReader.GetGuid(idx_Id);
+                                }
+                                Provisions.Add(provision);
+                            }
+
+                            provisionsList.ItemsSource = Provisions;
+                        }
+                    }
+                }
+            }
+        }
+
+        private void ProvisionsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if(e.AddedItems is null)
+            {
+                return;
+            }
+
+            SelectedProvision = ((sender as ComboBox).SelectedItem as Provision);
+            GetDays();
         }
     }
 
