@@ -118,5 +118,13 @@ namespace ProvisionsDesktop
             }
             return user;
         }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            if(e.Key.Equals(Key.Enter))
+            {
+                LoginClick(new object(), new RoutedEventArgs());
+            }
+        }
     }
 }
