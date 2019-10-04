@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
+using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -117,6 +118,13 @@ namespace ProvisionsDesktop
 
                             DaysGrid.DataContext = Days;
                         }
+                        else
+                        {
+                            Day.Statuses = Statuses;
+                            Day.Provisions = Provisions.Select(p => p.Name).ToList();
+                            Days = new ObservableCollection<Day>();
+                            DaysGrid.DataContext = Days;
+                        }
                     }
                 }
             }
@@ -134,7 +142,10 @@ namespace ProvisionsDesktop
             await Task.Run(() =>
             {
                 System.Threading.Thread.Sleep(1000);
-                day = _days.Where(d => d.Id.Equals(day.Id)).FirstOrDefault();
+                day = _days.Where(d => d.ProvisionName.Equals(day.ProvisionName) &&
+                    d.Status.Equals(day.Status) && d.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE"))
+                    .Equals(day.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE")))).FirstOrDefault();
+
                 if(day is null)
                 {
                     return;
@@ -286,6 +297,94 @@ namespace ProvisionsDesktop
 
             SelectedProvision = ((sender as ComboBox).SelectedItem as Provision);
             GetDays();
+        }
+
+        private void AddNew_Click(object sender, RoutedEventArgs e)
+        {
+            if(string.IsNullOrWhiteSpace(newProvisionTbx.Text) || newProvisionTbx.Text.Length < 3)
+            {
+                MessageBox.Show("Nazwa postanowienia niepoprawna",
+                    "Nazwa niepoprawna",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            using (SqlConnection connection = new SqlConnection(
+                Properties.Settings.Default.connectionString))
+            {
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandText = "p_add_provision";
+
+                    SqlParameter dp = command.Parameters.Add("@Name", SqlDbType.VarChar);
+                    dp.Value = newProvisionTbx.Text;
+
+                    dp = command.Parameters.Add("@Id", SqlDbType.VarChar);
+                    dp.Value = _user.Id;
+
+                    connection.Open();
+
+                    command.ExecuteNonQuery();
+
+                    BtnRefreshClick(new object(), new RoutedEventArgs());
+
+                    MessageBox.Show(string.Format("Dodano nowe postanowienie: {0}.", newProvisionTbx.Text),
+                        "Dodano postanowienie",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    newProvisionTbx.Text = string.Empty;
+                }
+            }
+        }
+
+        private void Remove_Click(object sender, RoutedEventArgs e)
+        {
+            var selectedProvision = ((provisionsList.SelectedItem as Provision) ?? new Provision()).Name;
+
+            if (string.IsNullOrWhiteSpace(selectedProvision))
+            {
+                return;
+            }
+
+            var result = MessageBox.Show(string.Format("Czy napewno chcesz usunąć postanowienie: {0}", selectedProvision),
+                "Powierdź usunięcie postanowienia",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Error);
+
+            switch(result)
+            {
+                case MessageBoxResult.No:
+                    return;
+            }
+
+            using (SqlConnection connection = new SqlConnection(
+                Properties.Settings.Default.connectionString))
+            {
+                using (SqlCommand command = connection.CreateCommand())
+                {
+                    command.CommandType = System.Data.CommandType.StoredProcedure;
+                    command.CommandText = "p_remove_provision";
+
+                    SqlParameter dp = command.Parameters.Add("@Name", SqlDbType.VarChar);
+                    dp.Value = selectedProvision;
+
+                    connection.Open();
+
+                    command.ExecuteNonQuery();
+
+                    BtnRefreshClick(new object(), new RoutedEventArgs());
+
+                    MessageBox.Show(string.Format("Usunięto postanowienie: {0}.", selectedProvision),
+                        "Usunięto postanowienie",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+
+                    provisionsList.SelectedItem = null;
+                }
+            }
         }
     }
 
