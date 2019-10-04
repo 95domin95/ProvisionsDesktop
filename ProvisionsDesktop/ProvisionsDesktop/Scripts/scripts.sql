@@ -1,6 +1,6 @@
 ﻿USE [Provisions]
 GO
-/****** Object:  StoredProcedure [dbo].[p_add_provision]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_add_provision]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -8,22 +8,25 @@ GO
 -- =============================================
 -- Author:		Dominik Wycisło
 -- Create date: 20.09.2019
--- Description:	Provision desktop add provision
+-- Description:	Provision desktop login
 -- =============================================
 CREATE PROCEDURE [dbo].[p_add_provision]
 	@Id nvarchar(100),
 	@Name nvarchar(100),
-	@Description nvarchar(100),
-	@Weight int,
-	@StartDate datetime
+	@Description nvarchar(100) = null,
+	@Weight int = 1,
+	@StartDate datetime = null
 AS
 BEGIN
+	if @StartDate is null begin
+		set @StartDate = GETDATE()
+	end
+
 	insert into Provisions values(NEWID(), @Name, @Description, @Weight, @StartDate, @Id)
 END
 
-select * from Provisions
 GO
-/****** Object:  StoredProcedure [dbo].[p_get_statuses]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_get_statuses]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -31,7 +34,7 @@ GO
 -- =============================================
 -- Author:		Dominik Wycisło
 -- Create date: 20.09.2019
--- Description:	Provision desktop get statuses
+-- Description:	Provision desktop login
 -- =============================================
 CREATE PROCEDURE [dbo].[p_get_statuses]
 AS
@@ -39,7 +42,7 @@ BEGIN
 	select Name as Name, Id as Id from Statuses;
 END
 GO
-/****** Object:  StoredProcedure [dbo].[p_get_user_days]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_get_user_days]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -47,7 +50,7 @@ GO
 -- =============================================
 -- Author:		Dominik Wycisło
 -- Create date: 20.09.2019
--- Description:	Provision desktop get days
+-- Description:	Provision desktop login
 -- =============================================
 CREATE PROCEDURE [dbo].[p_get_user_days]
 	@UserId nvarchar(100),
@@ -63,7 +66,7 @@ BEGIN
 	where (@ProvisionId is null or(p.Id=Convert(uniqueidentifier, @ProvisionId)));
 END
 GO
-/****** Object:  StoredProcedure [dbo].[p_login]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_login]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -82,7 +85,7 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[p_provisions_list]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_provisions_list]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -90,7 +93,7 @@ GO
 -- =============================================
 -- Author:		Dominik Wycisło
 -- Create date: 20.09.2019
--- Description:	Provision desktop provisons list
+-- Description:	Provision desktop login
 -- =============================================
 CREATE PROCEDURE [dbo].[p_provisions_list]
 	@UserId nvarchar(100)
@@ -101,7 +104,28 @@ BEGIN
 END
 
 GO
-/****** Object:  StoredProcedure [dbo].[p_save_day_changes]    Script Date: 9/22/2019 01:08:16 ******/
+/****** Object:  StoredProcedure [dbo].[p_remove_provision]    Script Date: 10/4/2019 23:18:52 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE PROCEDURE [dbo].[p_remove_provision]
+	@Name nvarchar(100)
+AS
+BEGIN
+
+	set NOCOUNT off;
+	delete from Provisions where Name=@Name
+	if @@ROWCOUNT > 0 begin
+		return 0
+	end
+
+	if @@ROWCOUNT = 0 begin
+		return -1
+	end
+END
+GO
+/****** Object:  StoredProcedure [dbo].[p_save_day_changes]    Script Date: 10/4/2019 23:18:52 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -109,7 +133,7 @@ GO
 -- =============================================
 -- Author:		Dominik Wycisło
 -- Create date: 20.09.2019
--- Description:	Provision desktop save day changes
+-- Description:	Provision desktop login
 -- =============================================
 CREATE PROCEDURE [dbo].[p_save_day_changes]
 	@Id varchar(100), 
