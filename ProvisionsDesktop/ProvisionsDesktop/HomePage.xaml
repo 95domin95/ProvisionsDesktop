@@ -62,7 +62,7 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTemplateColumn Header="Data rozpoczecia" SortDirection="Descending">
+                <DataGridTemplateColumn Header="Data rozpoczecia" SortDirection="Ascending">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate x:Name="currentStatusTbx">
                             <TextBlock Text="{Binding Path=Date, StringFormat=d}"/>
@@ -84,6 +84,18 @@
                         <DataTemplate>
                             <ComboBox ItemsSource="{Binding Path=Statuses}" SelectedItem="{Binding Path=Status}">
                             </ComboBox>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTemplateColumn Header="Opis" MinWidth="120">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Path=Description}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Path=Description}"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellEditingTemplate>
                 </DataGridTemplateColumn>

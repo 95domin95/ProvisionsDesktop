@@ -22,7 +22,7 @@ BEGIN
 		set @StartDate = GETDATE()
 	end
 
-	insert into Provisions values(NEWID(), @Name, @Description, @Weight, @StartDate, @Id)
+	insert into Provisions (Id, Name, [Description], [Weight], StartDate, UserId) values(NEWID(), @Name, @Description, @Weight, @StartDate, @Id)
 END
 
 GO
@@ -58,7 +58,7 @@ CREATE PROCEDURE [dbo].[p_get_user_days]
 AS
 BEGIN
 	select pd.Id as Id, d.[Date] as [Date], p.Name as ProvisionName,
-	 s.Name as [Status] from [Days] as d 
+	 d.[Description] as 'Description', s.Name as [Status] from [Days] as d 
 	inner join AspNetUsers as u on d.UserId=u.Id
 	inner join ProvisionDays as pd on d.Id=pd.DayId
 	inner join Provisions as p on p.Id=pd.ProvisionId
@@ -99,7 +99,7 @@ CREATE PROCEDURE [dbo].[p_provisions_list]
 	@UserId nvarchar(100)
 AS
 BEGIN
-	select Name as Name, [Description] as 'Description', StartDate as StartDate, p.Id as Id from Provisions as p inner join AspNetUsers as u
+	select [Name] as 'Name', [Description] as 'Description', StartDate as StartDate, p.Id as Id from Provisions as p inner join AspNetUsers as u
 		on p.UserId=u.Id where u.Id=@UserId;
 END
 
@@ -140,7 +140,8 @@ CREATE PROCEDURE [dbo].[p_save_day_changes]
 	@Date DateTime,
 	@ProvisionName nvarchar(100),
 	@Status varchar(100),
-	@UserId varchar(100)
+	@UserId varchar(100),
+	@Description varchar(max)=null
 AS
 BEGIN
 	DECLARE @CurrentId varchar(100);
@@ -181,8 +182,8 @@ BEGIN
 			where convert(date, d.[Date])=CONVERT(date, @Date) and pd.ProvisionId=@NewProvisionId;
 
 		if @Conflict=0 begin
-			insert into [Days] values (@NewDayID, @Date, 0, '', @UserId);
-			insert into [ProvisionDays] values (NEWID(), @NewDayID, @NewProvisionId, @NewStatusId)
+			insert into [Days] (Id, [Date], Difficulty, [Description], UserId) values (@NewDayID, @Date, 0, '', @UserId);
+			insert into [ProvisionDays] (Id, DayId, ProvisionId, StatusId) values (NEWID(), @NewDayID, @NewProvisionId, @NewStatusId)
 		end
 		return
 	end
@@ -202,5 +203,9 @@ BEGIN
 	if @Status!=@CurrentStatus and @NewStatusId is not null begin
 		update [ProvisionDays] set StatusId=@NewStatusId where Id=@Id;
 	end	
+
+	if @Description is not null begin
+		update [Days] set [Description]=@Description where Id=@CurrentId;
+	end
 END
 GO

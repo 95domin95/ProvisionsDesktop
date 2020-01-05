@@ -18,6 +18,7 @@ namespace ProvisionsDesktop.Models
         private DateTime _date = DateTime.Now;
         private string _status;
         private string _provisionName;
+        private string _description;
         public Guid Id
         {
             get
@@ -65,6 +66,18 @@ namespace ProvisionsDesktop.Models
             {
                 _status = value;
                 NotifyPropertyChanged(nameof(Status));
+            }
+        }
+        public string Description
+        {
+            get
+            {
+                return _description;
+            }
+            set
+            {
+                _description = value;
+                NotifyPropertyChanged(nameof(Description));
             }
         }
 

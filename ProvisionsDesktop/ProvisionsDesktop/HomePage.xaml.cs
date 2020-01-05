@@ -89,6 +89,7 @@ namespace ProvisionsDesktop
                             int idx_ProvisionName = dataReader.GetOrdinal("ProvisionName");
                             int idx_Status = dataReader.GetOrdinal("Status");
                             int idx_Id = dataReader.GetOrdinal("Id");
+                            int idx_Description = dataReader.GetOrdinal("Description");
 
                             Days = new ObservableCollection<Day>();
 
@@ -110,6 +111,10 @@ namespace ProvisionsDesktop
                                 if (!dataReader.IsDBNull(idx_Id))
                                 {
                                     day.Id = dataReader.GetGuid(idx_Id);
+                                }
+                                if (!dataReader.IsDBNull(idx_Description))
+                                {
+                                    day.Description = dataReader.GetString(idx_Description);
                                 }
                                 Day.Statuses = Statuses;
                                 Day.Provisions = Provisions.Select(p => p.Name).ToList();
@@ -141,54 +146,67 @@ namespace ProvisionsDesktop
         {
             await Task.Run(() =>
             {
-                System.Threading.Thread.Sleep(1000);
-                day = _days.Where(d => d.ProvisionName.Equals(day.ProvisionName) &&
-                    d.Status.Equals(day.Status) && d.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE"))
-                    .Equals(day.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE")))).FirstOrDefault();
-
-                if(day is null)
+                try
                 {
-                    return;
-                }
+                    System.Threading.Thread.Sleep(1000);
+                    day = _days.Where(d => d.ProvisionName.Equals(day.ProvisionName) &&
+                        d.Status.Equals(day.Status) && d.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE"))
+                        .Equals(day.Date.ToString("d", CultureInfo.CreateSpecificCulture("de-DE")))).FirstOrDefault();
 
-                using (SqlConnection connection = new SqlConnection(
-                    Properties.Settings.Default.connectionString))
-                {
-                    using (SqlCommand command = connection.CreateCommand())
+                    if (day is null)
                     {
-                        command.CommandType = System.Data.CommandType.StoredProcedure;
-                        command.CommandText = "p_save_day_changes";
+                        return;
+                    }
 
-                        SqlParameter dp = command.Parameters.Add("RETURN_VALUE", SqlDbType.Int);
-                        dp.Direction = ParameterDirection.ReturnValue;
-
-                        dp = command.Parameters.Add("@Id", SqlDbType.VarChar);
-                        dp.Value = day.Id.ToString() ?? string.Empty;
-
-                        dp = command.Parameters.Add("@Date", SqlDbType.DateTime);
-                        dp.Value = day.Date;
-
-                        dp = command.Parameters.Add("@ProvisionName", SqlDbType.VarChar);
-                        dp.Value = day.ProvisionName ?? string.Empty;
-
-                        dp = command.Parameters.Add("@Status", SqlDbType.VarChar);
-                        dp.Value = day.Status ?? string.Empty;
-
-                        dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
-                        dp.Value = _user.Id;
-
-                        connection.Open();
-
-                        command.ExecuteNonQuery();
-
-                        if ((int)command.Parameters["RETURN_VALUE"].Value != 0)
+                    using (SqlConnection connection = new SqlConnection(
+                        Properties.Settings.Default.connectionString))
+                    {
+                        using (SqlCommand command = connection.CreateCommand())
                         {
-                            MessageBox.Show("Coś poszło nie tak... :(",
-                                "Error",
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Error);
+                            command.CommandType = System.Data.CommandType.StoredProcedure;
+                            command.CommandText = "p_save_day_changes";
+
+                            SqlParameter dp = command.Parameters.Add("RETURN_VALUE", SqlDbType.Int);
+                            dp.Direction = ParameterDirection.ReturnValue;
+
+                            dp = command.Parameters.Add("@Id", SqlDbType.VarChar);
+                            dp.Value = day.Id.ToString() ?? string.Empty;
+
+                            dp = command.Parameters.Add("@Date", SqlDbType.DateTime);
+                            dp.Value = day.Date;
+
+                            dp = command.Parameters.Add("@ProvisionName", SqlDbType.VarChar);
+                            dp.Value = day.ProvisionName ?? string.Empty;
+
+                            dp = command.Parameters.Add("@Status", SqlDbType.VarChar);
+                            dp.Value = day.Status ?? string.Empty;
+
+                            dp = command.Parameters.Add("@Description", SqlDbType.VarChar);
+                            dp.Value = day.Description ?? string.Empty;
+
+                            dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
+                            dp.Value = _user.Id;
+
+                            connection.Open();
+
+                            command.ExecuteNonQuery();
+
+                            if ((int)command.Parameters["RETURN_VALUE"].Value != 0)
+                            {
+                                MessageBox.Show("Coś poszło nie tak... :(",
+                                    "Error",
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Error);
+                            }
                         }
                     }
+                }
+                catch(Exception)
+                {
+                    MessageBox.Show("Wystąpił nieznany bład... :(",
+                        "Error",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
                 }
             });
         }
