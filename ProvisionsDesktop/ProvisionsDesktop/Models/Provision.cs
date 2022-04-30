@@ -14,11 +14,9 @@ namespace ProvisionsDesktop.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
-        private Guid _id { get; set; }
+        private int _id { get; set; }
         private string _name { get; set; }
-        private DateTime _startDate { get; set; }
-        private string _description { get; set; }
-        public Guid Id
+        public int Id
         {
             get
             {
@@ -40,30 +38,6 @@ namespace ProvisionsDesktop.Models
             {
                 _name = value;
                 NotifyPropertyChanged(nameof(Name));
-            }
-        }
-        public DateTime StartDate
-        {
-            get
-            {
-                return _startDate;
-            }
-            set
-            {
-                _startDate = value;
-                NotifyPropertyChanged(nameof(StartDate));
-            }
-        }
-        public string Description
-        {
-            get
-            {
-                return _description;
-            }
-            set
-            {
-                _description = value;
-                NotifyPropertyChanged(nameof(Description));
             }
         }
 

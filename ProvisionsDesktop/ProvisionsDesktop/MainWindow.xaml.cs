@@ -26,6 +26,9 @@ namespace ProvisionsDesktop
     /// </summary>
     public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private const int SaltSize = 16; // 128 bit 
+        private const int KeySize = 32; // 256 bit
+        private const int Iterations = 1000;
         public MainWindow()
         {
             InitializeComponent();
@@ -69,39 +72,42 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_login";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = @"SELECT
+                                                [Id],
+                                                [Email],
+                                                [PasswordHash]
+                                            FROM [User]
+                                            WHERE [Email] = @UserName";
 
                     SqlParameter dp = command.Parameters.Add("@UserName", SqlDbType.VarChar);
                     dp.Value = userName;
-
-                    dp = command.Parameters.Add("@PasswordHash", SqlDbType.VarChar);
-                    dp.Value = password;
 
                     connection.Open();
 
                     using (SqlDataReader dataReader = command.ExecuteReader())
                     {
+                        string passwordHash = null;
                         if(dataReader.HasRows)
                         {
-                            int idx_UserName = dataReader.GetOrdinal("UserName");
                             int idx_Id = dataReader.GetOrdinal("Id");
                             int idx_Email = dataReader.GetOrdinal("Email");
+                            int idx_PasswordHash = dataReader.GetOrdinal("PasswordHash");
 
                             user = new User();
                             if(dataReader.Read())
                             {
-                                if (!dataReader.IsDBNull(idx_UserName))
-                                {
-                                    user.UserName = dataReader.GetString(idx_UserName);
-                                }
                                 if (!dataReader.IsDBNull(idx_Email))
                                 {
                                     user.Email = dataReader.GetString(idx_Email);
                                 }
                                 if (!dataReader.IsDBNull(idx_Id))
                                 {
-                                    user.Id = dataReader.GetString(idx_Id);
+                                    user.Id = dataReader.GetInt32(idx_Id);
+                                }
+                                if (!dataReader.IsDBNull(idx_PasswordHash))
+                                {
+                                    passwordHash = dataReader.GetString(idx_PasswordHash);
                                 }
                             }
                             if (dataReader.Read())
@@ -112,6 +118,10 @@ namespace ProvisionsDesktop
                                     MessageBoxImage.Error);
                                 return null;
                             }
+                        }
+                        if (string.IsNullOrEmpty(passwordHash) || !Check(passwordHash, password))
+                        {
+                            return null;
                         }
                     }
                 }
@@ -124,6 +134,34 @@ namespace ProvisionsDesktop
             if(e.Key.Equals(Key.Enter))
             {
                 LoginClick(new object(), new RoutedEventArgs());
+            }
+        }
+
+        private bool Check(string hash, string password)
+        {
+            var parts = hash.Split('.');
+
+            if (parts.Length != 3)
+            {
+                throw new FormatException("Unexpected hash format. " +
+                  "Should be formatted as `{iterations}.{salt}.{hash}`");
+            }
+
+            var iterations = Convert.ToInt32(parts[0]);
+            var salt = Convert.FromBase64String(parts[1]);
+            var key = Convert.FromBase64String(parts[2]);
+
+            using (var algorithm = new Rfc2898DeriveBytes(
+              password,
+              salt,
+              iterations,
+              HashAlgorithmName.SHA256))
+            {
+                var keyToCheck = algorithm.GetBytes(KeySize);
+
+                var verified = keyToCheck.SequenceEqual(key);
+
+                return verified;
             }
         }
     }

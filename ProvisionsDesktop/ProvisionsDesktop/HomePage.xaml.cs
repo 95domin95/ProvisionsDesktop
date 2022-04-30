@@ -70,14 +70,24 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_get_user_days";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = @"SELECT
+	                                            d.[Date],
+	                                            s.[Name] AS 'Status',
+	                                            d.[Id],
+	                                            o.[Name] AS 'ProvisionName',
+	                                            d.[Description]
+                                            FROM Day AS d
+                                            INNER JOIN Objective AS o
+	                                            ON d.ObjectiveId = o.Id AND o.UserId = @UserId AND ObjectiveId = CASE WHEN @ProvisionId = 0 THEN ObjectiveId ELSE @ProvisionId END
+                                            INNER JOIN [Status] AS s
+	                                            ON d.StatusId = s.Id";
 
-                    SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
+                    SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.Int);
                     dp.Value = _user.Id;
 
                     dp = command.Parameters.Add("@ProvisionId", SqlDbType.VarChar);
-                    dp.Value = SelectedProvision is null ? null : SelectedProvision.Id.ToString();
+                    dp.Value = SelectedProvision is null ? 0 : SelectedProvision.Id;
 
                     connection.Open();
 
@@ -110,7 +120,7 @@ namespace ProvisionsDesktop
                                 }
                                 if (!dataReader.IsDBNull(idx_Id))
                                 {
-                                    day.Id = dataReader.GetGuid(idx_Id);
+                                    day.Id = dataReader.GetInt32(idx_Id);
                                 }
                                 if (!dataReader.IsDBNull(idx_Description))
                                 {
@@ -163,19 +173,48 @@ namespace ProvisionsDesktop
                     {
                         using (SqlCommand command = connection.CreateCommand())
                         {
-                            command.CommandType = System.Data.CommandType.StoredProcedure;
-                            command.CommandText = "p_save_day_changes";
+                            command.CommandType = System.Data.CommandType.Text;
+                            command.CommandText = @"DECLARE @StatusId AS INT
+                                                    DECLARE @ObjectiveId AS INT
+                                                    SELECT TOP 1 @ObjectiveId = Id FROM Objective WHERE [Name] = @ObjectiveName AND UserId = @UserId
+                                                    SELECT TOP 1 @StatusId = Id FROM [Status] WHERE [Name] = @Status
+
+
+                                                    IF @Id = 0 BEGIN
+	                                                    INSERT INTO [Day]
+	                                                    (
+		                                                    [Date],
+		                                                    [StatusId],
+                                                            [Description],
+		                                                    [ObjectiveId]
+	                                                    )
+	                                                    VALUES
+	                                                    (
+		                                                    CASE WHEN @Date IS NULL THEN GETDATE() ELSE @Date END,
+		                                                    CASE WHEN @StatusId IS NULL THEN 1 ELSE @StatusId END,
+		                                                    @Description,
+		                                                    @ObjectiveId
+	                                                    )
+                                                    END ELSE BEGIN
+	                                                    UPDATE [Day]
+	                                                    SET 
+		                                                    [Description] = CASE WHEN @Description IS NULL THEN [Description] ELSE @Description END,
+		                                                    [Date] = CASE WHEN @Date IS NULL THEN [Date] ELSE @Date END,
+		                                                    [ObjectiveId] = @ObjectiveId,
+		                                                    [StatusId] = CASE WHEN @StatusId IS NULL THEN [StatusId] ELSE @StatusId END
+                                                        WHERE Id = @Id
+                                                    END";
 
                             SqlParameter dp = command.Parameters.Add("RETURN_VALUE", SqlDbType.Int);
                             dp.Direction = ParameterDirection.ReturnValue;
 
-                            dp = command.Parameters.Add("@Id", SqlDbType.VarChar);
-                            dp.Value = day.Id.ToString() ?? string.Empty;
+                            dp = command.Parameters.Add("@Id", SqlDbType.Int);
+                            dp.Value = day.Id;
 
                             dp = command.Parameters.Add("@Date", SqlDbType.DateTime);
                             dp.Value = day.Date;
 
-                            dp = command.Parameters.Add("@ProvisionName", SqlDbType.VarChar);
+                            dp = command.Parameters.Add("@ObjectiveName", SqlDbType.VarChar);
                             dp.Value = day.ProvisionName ?? string.Empty;
 
                             dp = command.Parameters.Add("@Status", SqlDbType.VarChar);
@@ -184,7 +223,7 @@ namespace ProvisionsDesktop
                             dp = command.Parameters.Add("@Description", SqlDbType.VarChar);
                             dp.Value = day.Description ?? string.Empty;
 
-                            dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
+                            dp = command.Parameters.Add("@UserId", SqlDbType.Int);
                             dp.Value = _user.Id;
 
                             connection.Open();
@@ -201,7 +240,7 @@ namespace ProvisionsDesktop
                         }
                     }
                 }
-                catch(Exception)
+                catch(Exception ex)
                 {
                     MessageBox.Show("Wystąpił nieznany bład... :(",
                         "Error",
@@ -227,10 +266,14 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_provisions_list";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = @"SELECT
+                                                o.Name,
+	                                            o.Id
+                                            FROM Objective AS o
+                                            WHERE UserId = @UserId";
 
-                    SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.VarChar);
+                    SqlParameter dp = command.Parameters.Add("@UserId", SqlDbType.Int);
                     dp.Value = _user.Id;
 
                     connection.Open();
@@ -239,29 +282,19 @@ namespace ProvisionsDesktop
                     {
                         if (dataReader.HasRows)
                         {
-                            int idx_StartDate = dataReader.GetOrdinal("StartDate");
                             int idx_Name = dataReader.GetOrdinal("Name");
-                            int idx_Description = dataReader.GetOrdinal("Description");
                             int idx_Id = dataReader.GetOrdinal("Id");
 
                             while (dataReader.Read())
                             {
                                 var provision = new Provision();
-                                if (!dataReader.IsDBNull(idx_StartDate))
-                                {
-                                    provision.StartDate = dataReader.GetDateTime(idx_StartDate);
-                                }
                                 if (!dataReader.IsDBNull(idx_Name))
                                 {
                                     provision.Name = dataReader.GetString(idx_Name);
                                 }
-                                if (!dataReader.IsDBNull(idx_Description))
-                                {
-                                    provision.Description = dataReader.GetString(idx_Description);
-                                }
                                 if (!dataReader.IsDBNull(idx_Id))
                                 {
-                                    provision.Id = dataReader.GetGuid(idx_Id);
+                                    provision.Id = dataReader.GetInt32(idx_Id);
                                 }
                                 Provisions.Add(provision);
                             }
@@ -282,8 +315,10 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_get_statuses";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = @"SELECT
+                                                [Name]
+                                            FROM[Status]";
 
                     connection.Open();
 
@@ -333,8 +368,19 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_add_provision";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = @"INSERT INTO Objective
+                                            (
+	                                            [Name],
+	                                            [UserId],
+	                                            [TypeId]
+                                            )
+                                            VALUES
+                                            (
+	                                            @Name,
+	                                            @UserId,
+	                                            1
+                                            )";
 
                     SqlParameter dp = command.Parameters.Add("@Name", SqlDbType.VarChar);
                     dp.Value = newProvisionTbx.Text;
@@ -383,8 +429,8 @@ namespace ProvisionsDesktop
             {
                 using (SqlCommand command = connection.CreateCommand())
                 {
-                    command.CommandType = System.Data.CommandType.StoredProcedure;
-                    command.CommandText = "p_remove_provision";
+                    command.CommandType = System.Data.CommandType.Text;
+                    command.CommandText = "DELETE FROM Objective WHERE UserId = @UserId AND [Name] = @Name";
 
                     SqlParameter dp = command.Parameters.Add("@Name", SqlDbType.VarChar);
                     dp.Value = selectedProvision;

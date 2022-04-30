@@ -14,12 +14,12 @@ namespace ProvisionsDesktop.Models
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
         }
-        private Guid _id;
+        private int _id;
         private DateTime _date = DateTime.Now;
         private string _status;
         private string _provisionName;
         private string _description;
-        public Guid Id
+        public int Id
         {
             get
             {
